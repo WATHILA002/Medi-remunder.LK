@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>MediRemind LK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f7a7a">
+<style>
+:root{--bg:#f6efdc;--card:#fffdf7;--pri:#1f7a7a;--pri2:#d7ecea;--tx:#1d2b2b;--mut:#6b7a7a;--ok:#2e9e5b;--bad:#d64545;--warn:#e0a020;--bd:#d9d2bd;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17201f;--card:#202c2b;--pri:#2a9494;--pri2:#27403f;--tx:#eef3f1;--mut:#9fb0ad;--bd:#34413f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17201f;--card:#202c2b;--pri:#2a9494;--pri2:#27403f;--tx:#eef3f1;--mut:#9fb0ad;--bd:#34413f;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+#app{max-width:430px;margin:0 auto;height:100%;display:flex;flex-direction:column;background:var(--bg)}
+header{background:var(--pri);color:#fff;text-align:center;padding:14px;font-weight:700;font-size:18px;border-radius:0 0 18px 18px}
+#main{flex:1;overflow-y:auto;padding:16px}
+nav{display:flex;background:var(--pri2);border-radius:18px 18px 0 0}
+nav button{flex:1;border:0;background:none;color:var(--tx);padding:9px 0;font-size:11px;border-top:3px solid transparent}
+nav button b{display:block;font-size:19px}nav button.on{border-top-color:var(--pri);font-weight:700}
+h2{margin:4px 0 10px}.mut{color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin:10px 0}
+label{display:block;font-weight:700;margin:12px 0 5px}
+input,select{width:100%;padding:11px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:9px 12px;font-size:14px}
+.chip.on{background:var(--pri2);border-color:var(--pri);font-weight:700}
+.btn{width:100%;border:0;background:var(--pri);color:#fff;border-radius:12px;padding:14px;font-size:16px;font-weight:700;margin-top:14px}
+.btn.alt{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
+.steps{display:flex;gap:5px;margin:6px 0 12px}.steps i{flex:1;height:5px;border-radius:3px;background:var(--bd)}.steps i.on{background:var(--pri)}
+.bar{height:10px;background:var(--bd);border-radius:6px;margin:8px 0;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.dose{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:11px;margin:9px 0}
+.dose.taken{background:#e2f4e7;border-color:var(--ok)}.dose.missed{background:#f9e1e1;border-color:var(--bad)}.dose.snoozed{background:#fbf0d3;border-color:var(--warn)}
+.dose.taken,.dose.missed,.dose.snoozed{color:#1d2b2b}
+.dose .gr{flex:1}.ic{font-size:26px}.acts{display:flex;gap:5px}
+.acts button{width:36px;height:36px;border-radius:50%;border:1px solid var(--bd);background:var(--card);font-size:16px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd)}
+.tr{display:flex;gap:6px;margin:6px 0}.tr input{flex:1}.tr button{width:44px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
+#ov{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:20px;z-index:9}
+#ov .box{background:var(--card);color:var(--tx);border-radius:18px;padding:20px;width:100%;max-width:360px;text-align:center}
+.big{font-size:46px}.shake{color:var(--bad);min-height:20px;font-size:13px}
+.hb{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}.hb .bar{flex:1;margin:0}
+</style></head><body>
+<div id="app"><header>🩺 MediRemind LK</header><div id="main"></div>
+<nav id="nav"></nav></div><div id="ov"></div>
+<script>
+const $=s=>document.querySelector(s);
+const DIS=[["Diabetes","🩸"],["HBP","❤️"],["Asthma","🫁"],["Epilepsy","🧠"],["Thyroid","🦋"],["Heart","💗"],["Cholesterol","🟡"],["Kidney","🫘"],["TB","🦠"]];
+const SENS=[["Mental Health","🧘"],["HIV","🎗️"]];
+const SUG={Diabetes:["Metformin","Glimepiride"],HBP:["Amlodipine","Losartan"],Asthma:["Inhaler","Montelukast"],Epilepsy:["Carbamazepine"],Thyroid:["Levothyroxine"],Heart:["Aspirin","Atorvastatin"],Cholesterol:["Atorvastatin"],Kidney:["Furosemide"],TB:["Rifampicin"],"Mental Health":["Sertraline"],HIV:["ART tablet"]};
+const ICO=Object.fromEntries(DIS.concat(SENS));
+const TONES=["Chime","Beep","Siren","Soft"],DURS={7:"7 Days",30:"1 Month",90:"3 Months",0:"On-going"};
+const TIMES={1:["08:00"],2:["08:00","20:00"],3:["08:00","14:00","20:00"]};
+let S={p:{name:"",age:"",conds:[]},meds:[],log:{},pin:"",tone:"Chime"};
+try{const x=localStorage.getItem("mrlk");if(x)S=Object.assign(S,JSON.parse(x))}catch(e){}
+const save=()=>{try{localStorage.setItem("mrlk",JSON.stringify(S))}catch(e){}};
+let V=S.meds.length?"home":"welcome",D=null,Q="",SNZ={},FIRED={},ringing=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const ymd=(d=new Date())=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const addD=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
+const fmt=t=>{const[h,m]=t.split(":").map(Number);return(h%12||12)+":"+pad(m)+(h<12?" AM":" PM")};
+const doses=d=>S.meds.filter(m=>m.start<=d&&(!m.end||d<=m.end)).flatMap(m=>m.times.map(t=>({m,t,key:d+"|"+m.id+"|"+t})));
+
+// sound
+let AC;function beep(tone){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const q={Beep:[[880,.2],[880,.2],[880,.2]],Chime:[[660,.25],[880,.25],[1100,.4]],Siren:[[600,.3],[900,.3],[600,.3],[900,.3]],Soft:[[440,.5],[520,.5]]}[tone]||[];let t=AC.currentTime;q.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type=tone=="Siren"?"sawtooth":"sine";g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);t+=d+.05});navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+
+// modal
+function modal(h){const o=$("#ov");o.innerHTML='<div class="box">'+h+'</div>';o.style.display="flex"}
+function closeM(){$("#ov").style.display="none";$("#ov").innerHTML=""}
+function pinGate(cb){window._cb=cb;const set=!S.pin;modal(`<div class=big>🔐</div><h3>${set?"Create a 4-digit PIN":"Enter PIN to unlock"}</h3><div class=mut>Protects sensitive conditions</div><input id=pin type=password inputmode=numeric maxlength=4 style="text-align:center;margin:12px 0"><div class=shake id=pe></div><div class=tr><button style="width:auto;flex:1;padding:12px" onclick="closeM()">Cancel</button><button style="flex:1;background:var(--pri);color:#fff;padding:12px" onclick="chkPin(${set})">OK</button></div>`);setTimeout(()=>$("#pin").focus(),50)}
+function chkPin(set){const v=$("#pin").value;if(!/^\d{4}$/.test(v)){$("#pe").textContent="Enter exactly 4 digits";return}
+if(set){S.pin=v;save()}else if(v!==S.pin){$("#pe").textContent="Wrong PIN";return}
+closeM();window._cb()}
+
+// alarm
+function ring(x,demo){if(ringing)return;ringing=x;const go=()=>beep(x.m.tone||S.tone);go();window._rt=setInterval(go,4000);
+try{if(Notification.permission=="granted")new Notification("Time for "+x.m.name,{body:x.m.dose})}catch(e){}
+modal(`<div class=big>⏰</div><h3>${esc(x.m.name)}</h3><div>${esc(x.m.dose)} · ${fmt(x.t)}</div><div class=mut>${demo?"Demo alarm":"Medicine time!"}</div>${demo?`<button class=btn onclick="stopRing()">Close demo</button>`:`<button class=btn onclick="mark('${x.key}','taken')">✓ Taken</button><div class=tr><button style="width:auto;flex:1;padding:12px" onclick="mark('${x.key}','snoozed')">Snooze 10 min</button><button style="width:auto;flex:1;padding:12px" onclick="mark('${x.key}','missed')">Missed</button></div>`}`)}
+function stopRing(){clearInterval(window._rt);ringing=null;closeM()}
+function tick(){const d=ymd(),n=Date.now();doses(d).forEach(x=>{const st=S.log[x.key]||"";if(st=="taken"||st=="missed"||FIRED[x.key])return;const t=Date.parse(d+"T"+x.t+":00");const due=SNZ[x.key]?n>=SNZ[x.key]:(n>=t&&n<t+30*6e4);if(due&&!ringing){FIRED[x.key]=1;ring(x)}})}
+function mark(k,st){if(ringing)stopRing();S.log[k]=st;if(st=="snoozed"){SNZ[k]=Date.now()+10*6e4;delete FIRED[k]}save();render()}
+function testAlarm(){const m=S.meds[0]||{name:"Metformin",dose:"500 mg",tone:S.tone};ring({m,t:pad(new Date().getHours())+":"+pad(new Date().getMinutes()),key:"demo"},1)}
+
+// wizard
+function newDraft(name){D={name:name||"",dose:"1 tablet",freq:1,times:["08:00"],dur:90,tone:S.tone}}
+function wiz(v,name){if(!D||name!==undefined)newDraft(name);go(v)}
+function steps(n){return`<div class=mut>Step ${n} of 4</div><div class=steps>${[1,2,3,4].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div>`}
+function chips(list,on,fn){return`<div class=chips>${list.map(([n,i])=>`<button class="chip ${on.includes(n)?"on":""}" onclick="${fn}('${n}')">${i} ${n}</button>`).join("")}</div>`}
+function tg(n){const f=()=>{const c=S.p.conds,i=c.indexOf(n);i<0?c.push(n):c.splice(i,1);save();render()};SENS.some(s=>s[0]==n)&&!S.p.conds.includes(n)?pinGate(f):f()}
+function setFreq(f){D.freq=f;D.times=f<4?TIMES[f].slice():D.times;render()}
+function addT(){D.times.push("12:00");D.freq=4;render()}
+function delT(i){if(D.times.length>1){D.times.splice(i,1);D.freq=4;render()}}
+function pick(n){D.name=n;render()}
+function confirmPlan(){const end=D.dur?addD(D.dur):null;S.meds.push({id:Date.now(),name:D.name,dose:D.dose,times:D.times.slice().sort(),start:ymd(),end,tone:D.tone,conds:S.p.conds.slice()});S.tone=D.tone;save();D=null;go("home")}
+
+const views={
+welcome(){return`<div class=card style="text-align:center;margin-top:30px"><div class=big>🩺</div><h2>Your Medical Plan, Designed Around You</h2><div class=mut>Track conditions, plan medicine times and never miss a dose.</div><button class=btn onclick="wiz('w1')">Get Started</button><button class="btn alt" onclick="demo()">Try with demo data</button></div>`},
+w1(){return`<h2>Get Started with Your Medical Plan</h2>${steps(1)}<div class=card><label>Full Name</label><input value="${esc(S.p.name)}" oninput="S.p.name=this.value;save()"><label>Age</label><input type=number inputmode=numeric value="${esc(S.p.age)}" oninput="S.p.age=this.value;save()"><label>Disease Selection <span class=mut>(tap to select)</span></label>${chips(DIS,S.p.conds,"tg")}<label>Sensitive 🔒</label>${chips(SENS,S.p.conds,"tg")}<button class=btn onclick="S.p.name.trim()?wiz('w2'):alert('Please enter your name')">Continue</button></div>`},
+w2(){const sg=[...new Set(S.p.conds.flatMap(c=>SUG[c]||[]))];return`<h2>Medication Details</h2>${steps(2)}<div class=card><label>Medicine Name</label><input value="${esc(D.name)}" placeholder="Medicine Name" oninput="D.name=this.value">${sg.length?`<div class=mut style="margin:8px 0 4px">Suggestions for your conditions</div><div class=chips>${sg.map(s=>`<button class=chip onclick="pick('${s}')">${s}</button>`).join("")}</div>`:""}<label>Dose</label><input value="${esc(D.dose)}" oninput="D.dose=this.value"><label>Frequency</label><div class=chips>${[[1,"Once daily"],[2,"Twice daily"],[3,"Three times"],[4,"Custom"]].map(([f,l])=>`<button class="chip ${D.freq==f?"on":""}" onclick="${f<4?`setFreq(${f})`:"D.freq=4;render()"}">${l}</button>`).join("")}</div><label>Select Times</label>${D.times.map((t,i)=>`<div class=tr><input type=time value="${t}" oninput="D.times[${i}]=this.value"><button onclick="delT(${i})">✕</button></div>`).join("")}<button class="btn alt" onclick="addT()">+ Add time</button><button class=btn onclick="D.name.trim()&&D.times.every(Boolean)?go('w3'):alert('Enter medicine name and all times')">Continue</button></div>`},
+w3(){return`<h2>Medication Course</h2>${steps(3)}<div class=card><label>Duration</label><div class=chips>${Object.entries(DURS).map(([k,l])=>`<button class="chip ${D.dur==k?"on":""}" onclick="D.dur=${k};render()">${l}</button>`).join("")}</div><label>Ringtone Selection</label><select onchange="D.tone=this.value;beep(this.value)">${TONES.map(t=>`<option ${D.tone==t?"selected":""}>${t}</option>`).join("")}</select><button class="btn alt" onclick="beep(D.tone)">🔊 Preview sound</button><button class=btn onclick="go('w4')">Continue</button></div>`},
+w4(){const r=(a,b)=>`<div class=row><span>${a}</span><b>${b}</b></div>`;return`<h2>Your Medical Plan, Designed Around You</h2>${steps(4)}<div class=card>${r("Patient",esc(S.p.name))}${r("Conditions",esc(S.p.conds.join(", ")||"—"))}${r("Medicine",esc(D.name))}${r("Dose",esc(D.dose))}${r("Schedule",D.times.map(fmt).join(", "))}${r("Alarm sound",D.tone)}${r("Course",DURS[D.dur])}${r("Security",S.pin?"✅ PIN set":"Not set")}<button class=btn onclick="confirmPlan()">Confirm Medical Plan</button></div>`},
+home(){const d=ymd(),ds=doses(d).sort((a,b)=>a.t.localeCompare(b.t)),n=pad(new Date().getHours())+":"+pad(new Date().getMinutes()),done=ds.filter(x=>S.log[x.key]=="taken").length;
+const lab=(s,x)=>({taken:"✅ Taken",missed:"❌ Missed",snoozed:"⏰ Snoozed"}[s]||(x.t<n?"🔴 Overdue":"⏳ Upcoming"));
+return`<h2>Hello, ${esc(S.p.name.split(" ")[0]||"there")} 👋</h2><div class=mut>${new Date().toDateString()}</div><div class=card><b>Today’s progress</b><div class=bar><i style="width:${ds.length?done/ds.length*100:0}%"></i></div><span class=mut>${done} of ${ds.length} doses taken</span></div>${ds.map(x=>{const s=S.log[x.key]||"";return`<div class="dose ${s}"><div class=ic>💊</div><div class=gr><b>${esc(x.m.name)}</b><div class=mut>${esc(x.m.dose)} · ${fmt(x.t)}</div><div style="font-size:13px">${lab(s,x)}</div></div><div class=acts><button onclick="mark('${x.key}','taken')">✓</button><button onclick="mark('${x.key}','snoozed')">⏰</button><button onclick="mark('${x.key}','missed')">✕</button></div></div>`}).join("")||`<div class=card>No doses today. Add a medicine to begin.</div>`}<button class=btn onclick="wiz('w2','')">+ Add medicine</button><button class="btn alt" onclick="testAlarm()">🔔 Test alarm now</button>`},
+meds(){return`<h2>My Medicines</h2>${S.meds.map(m=>`<div class=card><b>💊 ${esc(m.name)}</b> <span class=mut>${esc(m.dose)}</span><div class=mut>${m.times.map(fmt).join(" · ")}</div><div class=mut>${m.end?"Until "+m.end:"On-going"} · 🔔 ${m.tone}</div><button class="btn alt" style="padding:9px" onclick="delMed(${m.id})">Delete</button></div>`).join("")||`<div class=card>No medicines yet.</div>`}<button class=btn onclick="wiz('w2','')">+ Add medicine</button>`},
+hist(){let h="",tot=0,tk=0;for(let i=6;i>=0;i--){const d=addD(-i),ds=doses(d),t=ds.filter(x=>S.log[x.key]=="taken").length;tot+=ds.length;tk+=t;h+=`<div class=hb><span style="width:46px">${d.slice(5)}</span><div class=bar><i style="width:${ds.length?t/ds.length*100:0}%"></i></div><span>${t}/${ds.length}</span></div>`}
+return`<h2>Patient History &amp; Adherence</h2><div class=card><b>Last 7 days: ${tot?Math.round(tk/tot*100):0}% adherence</b>${h}</div><div class=card><b>Today’s log</b>${doses(ymd()).sort((a,b)=>a.t.localeCompare(b.t)).map(x=>`<div class=row><span>${esc(x.m.name)} ${fmt(x.t)}</span><span>${{taken:"✅ Taken",missed:"❌ Missed",snoozed:"⏰ Snoozed"}[S.log[x.key]]||"—"}</span></div>`).join("")||"<span class=mut>Nothing yet</span>"}</div>`},
+search(){const q=Q.toLowerCase(),cs=DIS.concat(SENS).filter(c=>c[0].toLowerCase().includes(q)),ms=S.meds.filter(m=>m.name.toLowerCase().includes(q));
+return`<h2>Search</h2><input placeholder="Search medicines or conditions" value="${esc(Q)}" oninput="Q=this.value;render(1)" id=sq>${ms.length?`<h3>My medicines</h3>${ms.map(m=>`<div class=card>💊 ${esc(m.name)} <span class=mut>${m.times.map(fmt).join(", ")}</span></div>`).join("")}`:""}<h3>Conditions</h3>${cs.map(c=>`<div class=card>${c[1]} <b>${c[0]}</b><div class=mut style="margin:6px 0">Common medicines:</div><div class=chips>${(SUG[c[0]]||[]).map(s=>`<button class=chip onclick="wiz('w2','${s}')">+ ${s}</button>`).join("")}</div></div>`).join("")}`},
+profile(){return`<h2>Profile</h2><div class=card><label>Full Name</label><input value="${esc(S.p.name)}" oninput="S.p.name=this.value;save()"><label>Age</label><input type=number value="${esc(S.p.age)}" oninput="S.p.age=this.value;save()"><label>Manage Conditions</label>${chips(DIS,S.p.conds,"tg")}<label>Sensitive 🔒 (PIN required)</label>${chips(SENS,S.p.conds,"tg")}<label>Default alarm sound</label><select onchange="S.tone=this.value;save();beep(this.value)">${TONES.map(t=>`<option ${S.tone==t?"selected":""}>${t}</option>`).join("")}</select><button class="btn alt" onclick="askNotif()">Enable notifications</button><button class="btn alt" onclick="S.pin='';save();pinGate(()=>render())">Change PIN</button><button class="btn alt" style="color:var(--bad)" onclick="if(confirm('Delete all data?')){S={p:{name:'',age:'',conds:[]},meds:[],log:{},pin:'',tone:'Chime'};save();go('welcome')}">Reset all data</button></div>`}};
+function delMed(id){if(confirm("Delete this medicine?")){S.meds=S.meds.filter(m=>m.id!=id);save();render()}}
+function askNotif(){try{Notification.requestPermission().then(p=>alert("Notifications: "+p))}catch(e){alert("Not supported here")}}
+function demo(){S.p={name:"Kavindya Perera",age:"45",conds:["Diabetes","HBP","Asthma"]};const st=addD(-10);S.meds=[{id:1,name:"Metformin",dose:"500 mg",times:["08:00"],start:st,end:null,tone:"Chime"},{id:2,name:"Amlodipine",dose:"5 mg",times:["09:00"],start:st,end:null,tone:"Beep"},{id:3,name:"Inhaler",dose:"1 puff",times:["13:00"],start:st,end:null,tone:"Soft"}];S.log={};for(let i=1;i<=6;i++)doses(addD(-i)).forEach(x=>{if(Math.random()>.2)S.log[x.key]="taken";else S.log[x.key]="missed"});save();go("home")}
+const NAV=[["home","🏠","Home"],["meds","💊","Meds"],["hist","📊","History"],["search","🔍","Search"],["profile","👤","Profile"]];
+function go(v){V=v;render();$("#main").scrollTop=0}
+function render(keep){const a=NAV.some(n=>n[0]==V);$("#main").innerHTML=views[V]();$("#nav").style.display=a?"flex":"none";$("#nav").innerHTML=NAV.map(n=>`<button class="${V==n[0]?"on":""}" onclick="go('${n[0]}')"><b>${n[1]}</b>${n[2]}</button>`).join("");if(keep){const s=$("#sq");if(s){s.focus();s.setSelectionRange(Q.length,Q.length)}}}
+render();setInterval(tick,5000);tick();
+</script></body></html>
